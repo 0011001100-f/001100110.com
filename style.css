@@ -1,4 +1,9 @@
-/* Reset and general styles */
+.geo-regular {
+  font-family: "Geo", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
 body {
   margin: 0;
   height: 100vh;
@@ -10,7 +15,6 @@ body {
   align-items: center;
 }
 
-/* Header styles */
 header {
   width: 100%;
   text-align: center;
@@ -23,7 +27,6 @@ header h1 {
   margin: 0;
 }
 
-/* Center thm badge vertically in remaining space */
 main {
   flex: 1;
   display: flex;
@@ -31,7 +34,6 @@ main {
   align-items: center;
 }
 
-/* Badge image */
 img {
   display: block;
 }
