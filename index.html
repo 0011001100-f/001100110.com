@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0011001100 Terminal</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: monospace;
+        }
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        #terminal-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 900px;
+            height: 70vh;
+            background-color: rgba(0, 0, 0, 0.85);
+            border: 2px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            color: #0f0;
+        }
+        #input-line {
+            border-bottom: 1px solid #0f0;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+        #prompt {
+            margin-right: 8px;
+        }
+        #command {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 1em;
+        }
+        #terminal {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            white-space: pre-wrap;
+        }
+        #terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+        #terminal::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+        }
+        #terminal::-webkit-scrollbar-thumb {
+            background: #0f0;
+        }
+        .markdown-viewer {
+            max-height: 100%;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #0f0;
+            background-color: rgba(0, 20, 0, 0.3);
+        }
+        .markdown-viewer::-webkit-scrollbar {
+            width: 6px;
+        }
+        .markdown-viewer::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .markdown-viewer::-webkit-scrollbar-thumb {
+            background: #0f0;
+        }
+        .markdown-viewer h1 {
+            color: #0f0;
+            border-bottom: 2px solid #0f0;
+            padding-bottom: 5px;
+        }
+        .markdown-viewer h2 {
+            color: #0f0;
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 3px;
+        }
+        .markdown-viewer h3, .markdown-viewer h4, .markdown-viewer h5, .markdown-viewer h6 {
+            color: #0f0;
+        }
+        .markdown-viewer code {
+            background-color: rgba(0, 255, 0, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #0f0;
+        }
+        .markdown-viewer pre {
+            background-color: rgba(0, 255, 0, 0.05);
+            padding: 10px;
+            border-left: 3px solid #0f0;
+            overflow-x: auto;
+        }
+        .markdown-viewer pre code {
+            background: none;
+            padding: 0;
+        }
+        .markdown-viewer a {
+            color: #0f0;
+            text-decoration: underline;
+        }
+        .markdown-viewer blockquote {
+            border-left: 3px solid #0f0;
+            padding-left: 10px;
+            margin-left: 0;
+            color: #0f0;
+            opacity: 0.8;
+        }
+        .markdown-viewer ul, .markdown-viewer ol {
+            padding-left: 20px;
+        }
+        .markdown-viewer img {
+            max-width: 100%;
+            border: 1px solid #0f0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    
+    <div id="terminal-container">
+        <div id="input-line">
+            <span id="prompt">&gt;</span>
+            <input id="command" type="text" autofocus autocomplete="off" />
+        </div>
+        <div id="terminal"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <script>
+        // Matrix Animation
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const sequence = '0011001100';
+        const fontSize = 16;
+        let columns = Math.floor(canvas.width / fontSize);
+        const drops = [];
+        for (let i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.6)';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const char = sequence[Math.floor(Math.random() * sequence.length)];
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+                ctx.fillText(char, x, y);
+                if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 33);
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const newColumns = Math.floor(canvas.width / fontSize);
+            if (newColumns > drops.length) for (let i = drops.length; i < newColumns; i++) drops[i] = Math.random() * -100;
+            else if (newColumns < drops.length) drops.splice(newColumns);
+            columns = newColumns;
+        });
+
+        // Terminal Functionality
+        const terminal = document.getElementById('terminal');
+        const commandInput = document.getElementById('command');
+
+        const commands = {
+            help: `
+Available commands:
+- help       Show this help message
+- about      Learn more about me
+- contact    Show contact info
+- writeups   List my writeups
+- clear      Clear terminal screen
+            `,
+            about: `Cyber security and hacking enthusiast - more detailed about coming soon...`,
+            contact: `You can contact me at: contact@0011001100.com`,
+        };
+
+        let history = [];
+        let historyIndex = -1;
+
+        function typeText(text, callback) {
+            let i = 0;
+            const interval = setInterval(() => {
+                commandInput.value += text[i];
+                i++;
+                if (i >= text.length) {
+                    clearInterval(interval);
+                    callback && callback();
+                }
+            }, 100);
+        }
+
+        async function executeCommand(cmd) {
+            const trimmed = cmd.trim().toLowerCase();
+            const args = trimmed.split(' ');
+            const mainCmd = args[0];
+
+            terminal.textContent = '';
+            terminal.innerHTML = '';
+
+            if (trimmed === '') return;
+            if (trimmed === 'clear') {
+                terminal.textContent = '';
+                return;
+            }
+
+            if (mainCmd === 'writeups') {
+                if (args.length === 1) {
+                    // List all writeups
+                    terminal.textContent = 'Fetching writeups...\n';
+                    try {
+                        const response = await fetch('writeups.json');
+                        const writeups = await response.json();
+                        if (!writeups.length) {
+                            terminal.textContent = 'No writeups available.';
+                            return;
+                        }
+                        let output = 'Use: writeups <name> to view a writeup.\n\nAvailable writeups:\n\n';
+                        writeups.forEach(w => {
+                            output += `${w.name} - ${w.folder} - ${w.date}\n`;
+                        });
+                        terminal.textContent = output;
+                    } catch (err) {
+                        terminal.textContent = 'Error fetching writeups.';
+                        console.error(err);
+                    }
+                } else {
+                    // View specific writeup
+                    const writeupName = args.slice(1).join(' ');
+                    terminal.textContent = `Loading writeup: ${writeupName}...\n`;
+                    try {
+                        const response = await fetch('writeups.json');
+                        const writeups = await response.json();
+                        const writeup = writeups.find(w => w.name.toLowerCase() === writeupName.toLowerCase());
+                        
+                        if (!writeup) {
+                            terminal.textContent = `Writeup "${writeupName}" not found.\nUse 'writeups' to see available writeups.`;
+                            return;
+                        }
+
+                        const mdPath = `writeups/${writeup.folder}/${writeup.name}/${writeup.name}.md`;
+                        const mdResponse = await fetch(mdPath);
+                        
+                        if (!mdResponse.ok) {
+                            terminal.textContent = `Error loading writeup file from ${mdPath}`;
+                            return;
+                        }
+
+                        const mdContent = await mdResponse.text();
+                        let htmlContent = marked.parse(mdContent);
+                        
+                        // Fix image paths to be relative to the writeup folder
+                        const basePath = `writeups/${writeup.folder}/${writeup.name}/`;
+                        htmlContent = htmlContent.replace(/src="images\//g, `src="${basePath}images/`);
+                        htmlContent = htmlContent.replace(/src='images\//g, `src='${basePath}images/`);
+                        
+                        terminal.innerHTML = `<div class="markdown-viewer">${htmlContent}</div>`;
+                    } catch (err) {
+                        terminal.textContent = 'Error loading writeup.';
+                        console.error(err);
+                    }
+                }
+                return;
+            }
+
+            const output = commands[trimmed] || `Unknown command: ${trimmed}\nType 'help' for a list of commands.`;
+            terminal.textContent = output;
+        }
+
+        commandInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const input = commandInput.value.trim();
+                if (input) {
+                    history.push(input);
+                    historyIndex = history.length;
+                }
+                executeCommand(input);
+                commandInput.value = '';
+            }
+
+            if (e.key === 'ArrowUp') {
+                if (history.length > 0 && historyIndex > 0) {
+                    historyIndex--;
+                    commandInput.value = history[historyIndex];
+                }
+                e.preventDefault();
+            }
+            if (e.key === 'ArrowDown') {
+                if (history.length > 0 && historyIndex < history.length - 1) {
+                    historyIndex++;
+                    commandInput.value = history[historyIndex];
+                } else if (historyIndex === history.length - 1) {
+                    historyIndex++;
+                    commandInput.value = '';
+                }
+                e.preventDefault();
+            }
+        });
+
+        window.onload = () => {
+            commandInput.value = '';
+            typeText('help', () => {
+                setTimeout(() => {
+                    executeCommand('help');
+                    commandInput.value = '';
+                }, 500);
+            });
+        };
+    </script>
+</body>
+</html>
